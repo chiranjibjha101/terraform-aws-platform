@@ -1,0 +1,40 @@
+# .pre-commit-config.yaml
+repos:
+  # Terraform-specific hooks
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.88.0
+    hooks:
+      # Formats all .tf files — blocks commit if any file was reformatted
+      - id: terraform_fmt
+        args: [--args=-recursive]
+
+      # Runs terraform validate on every changed module/stack
+      - id: terraform_validate
+
+      # Runs tflint using your .tflint.hcl config
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+
+      # Security scanner — catches public S3 buckets, unencrypted RDS, open SGs
+      - id: terraform_checkov
+        args:
+          - --args=--quiet
+          - --args=--skip-check CKV_AWS_123 # skip specific rules if needed
+
+      # Auto-generates README.md for every module from variables/outputs
+      - id: terraform_docs
+        args:
+          - --hook-config=--path-to-file=README.md
+          - --hook-config=--add-to-existing-file=true
+          - --hook-config=--create-file-if-not-exist=true
+  # General hygiene hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: detect-aws-credentials # blocks accidental key commits
+      - id: detect-private-key # blocks private key commits
